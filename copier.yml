@@ -1,0 +1,52 @@
+# Copier template — template-governance-base (the stack-agnostic governance kernel).
+# Renders the governance furniture + a language-agnostic pre-commit enforcement layer that
+# any stack overlay (template-py-uv-workspace, …) composes on top of. Apply order:
+# base -> python-stack -> mcp-capability. Author: Phillip Anderson | Integrate-IT Australia.
+
+_subdirectory: template
+_answers_file: .copier-answers.base.yml
+_min_copier_version: "9.16.0"
+
+# Write-once user-data seeds: created on first render, never clobbered by a later `copier update`.
+_skip_if_exists:
+  - README.md
+  - CHANGELOG.md
+  - NOTICE
+  - AGENTS.local.md
+
+# --- Questions -----------------------------------------------------------------------
+project_name:
+  type: str
+  help: "Repository name (kebab-case, e.g. my-service)."
+
+project_description:
+  type: str
+  default: ""
+  help: "One-line description of the repository."
+
+author_name:
+  type: str
+  default: "Phillip Anderson"
+
+author_org:
+  type: str
+  default: "Integrate-IT Australia"
+
+license_holder:
+  type: str
+  default: "{{ author_org }}"
+  help: "Copyright holder recorded in NOTICE (LICENSE stays verbatim Apache-2.0)."
+
+copyright_year:
+  type: int
+  default: 2026
+
+contact_email:
+  type: str
+  default: "panderson@integrate-it.com.au"
+  help: "Security + code-of-conduct contact address."
+
+github_owner:
+  type: str
+  default: "iitapanderson"
+  help: "GitHub owner/org that will host the rendered repository."

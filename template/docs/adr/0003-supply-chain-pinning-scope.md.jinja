@@ -1,0 +1,65 @@
+---
+id: ADR-0003
+type: ADR
+status: VERIFIED
+gist: Scope the SHA/digest-pin supply-chain mandate to CI Actions (the trusted build/release path); keep pre-commit hook revs on readable version tags. Stack overlays that ship deployables digest-pin their own base images.
+---
+
+# ADR-0003: Supply-chain pinning is scoped to CI Actions, not every ref
+
+## Status
+
+Accepted. Frontmatter follows the `repo-hygiene` `docs/**` rule.
+
+## Context
+
+`AGENTS.md` states a SHA-pinning mandate ("supply-chain integrity over convenience"), and the base
+`pre-commit` gate enforces it: every `uses:` in `.github/workflows/` must pin a 40-hex commit SHA
+(or, for `docker://` actions, an `@sha256:` digest). Two other supply-chain surfaces are **not** held
+to that bar:
+
+- **`.pre-commit-config.yaml`** pins hook repos to mutable version tags (`rev: v5.0.0`, …).
+- **Container base images** (added by a stack overlay that ships a deployable) pin to readable tags,
+  not digests.
+
+The framing question is decisive: this base is a **reference governance kernel** propagated to
+clones — what posture should every clone inherit, by surface?
+
+## Decision
+
+**Scope the SHA/digest-pin mandate to CI Actions only.** Pre-commit hook revs stay on readable,
+specific version tags. Stack overlays that introduce deployable container images digest-pin their
+own bases (their concern, not the base's).
+
+Rationale, surface by surface:
+
+- **CI Actions — pin, and a clone inherits it.** Actions run in the *trusted build/release path*:
+  they hold write tokens and produce signed release artifacts. This is the highest-value
+  supply-chain surface and the one where a moved tag does real damage. The base enforces it.
+- **pre-commit hooks — tag-pinned.** Hooks run in the *local dev path* (a weaker threat model — no
+  release tokens, no published artifact). The ecosystem norm is tag pins managed by
+  `pre-commit autoupdate`, which SHA-pinning fights for little gain.
+- **Container bases — the overlay's call.** A readable base tag teaches a cloner better than an
+  opaque digest; a cloner productionising a real service should digest-pin its bases. That guidance
+  belongs to the stack overlay that ships the service, not to the stack-agnostic base.
+
+## Consequences
+
+- **Coherent, defensible posture** — the strongest control sits on the highest-risk surface (the
+  build/release path), and the asymmetry is a documented decision, not an apparent gap.
+- **The base stays legible** — clones inherit SHA-pinned Actions without digest noise on the
+  local-dev surface where it teaches poorly.
+- **Pre-commit refs remain mutable** — a moved tag could alter a local hook run. Mitigated by
+  specific patch tags and by confining the unpinned surface to the local-dev path.
+
+## Alternatives considered
+
+- **Extend SHA/digest pinning to all surfaces.** Rejected: it over-applies a build-path control to a
+  local-dev tool against its ecosystem grain and breaks `pre-commit autoupdate`.
+- **Leave the asymmetry undocumented.** Rejected: in a reference kernel that exists to model a
+  standard, an unexplained inconsistency reads as an oversight and risks cloners cargo-culting
+  either the pinning or the gaps without understanding why.
+
+---
+
+Author: {{ author_name }} | {{ author_org }}

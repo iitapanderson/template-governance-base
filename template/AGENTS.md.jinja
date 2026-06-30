@@ -1,0 +1,62 @@
+# AGENTS.md
+
+Canonical onboarding guide for `{{ project_name }}`. This file is the source of truth; `CLAUDE.md`
+is a thin pointer to it, and `AGENTS.local.md` holds project-specific notes. Read this before
+making changes.
+
+This repository was scaffolded from `template-governance-base` — the stack-agnostic governance
+kernel. A language stack overlay (e.g. a uv-workspace Python overlay) composes on top and documents
+its own architecture, layout, and toolchain in the sections it adds below this guide.
+
+## The quality gate
+
+The credential-free gate is the repository's `pre-commit` hooks:
+
+```bash
+uvx pre-commit run --all-files
+```
+
+The base layer contributes:
+
+- **Universal hygiene** — trailing-whitespace, end-of-file, YAML/TOML validity, merge-conflict
+  markers, large-file guard, and secret scanning (gitleaks).
+- **Governance enforcement** (language-agnostic) — Actions are SHA-pinned, `LICENSE` is verbatim
+  Apache-2.0, root Markdown is allow-listed, and every `docs/` knowledge artefact carries
+  enum-valid frontmatter.
+
+A stack overlay adds its own lint, type-check, structure-lint, and test hooks. Run the same gate
+locally that CI runs; CI is the backstop the local hook cannot be `--no-verify`'d past.
+
+## Governance standards
+
+This repository is built to externally maintained standards, referenced **by name only** (read the
+canonical documents; do not expect their bodies inline):
+
+- **repo-structure-standard** — the canonical directory layout for the stack.
+- **repo-hygiene** — the mechanical enforcement layer (frontmatter, file placement, clean-repo
+  rules) that the gates and pre-commit hooks operationalise.
+- **governance-standards** — code-quality standards (typing, error handling, output contracts,
+  idempotency).
+
+When a convention seems arbitrary, its rationale lives in one of those three documents.
+
+## Conventions (universal)
+
+- **SHA-pinned GitHub Actions** — every `uses:` in `.github/workflows/` is pinned to a full commit
+  SHA, not a moving tag (supply-chain integrity over convenience; see `docs/adr/`).
+- **`docs/` frontmatter** — every Markdown file under `docs/` carries enum-valid YAML frontmatter
+  (a recognised `type`/`status` set, per repo-hygiene). Files missing or carrying invalid
+  frontmatter fail the gate.
+- **Root Markdown allowlist** — only the OSS-furniture Markdown set lives at the repo root;
+  everything else belongs under `docs/`.
+
+## Governance updates
+
+This repo is linked to `template-governance-base` via `.copier-answers.base.yml`. Pull later
+governance changes with `uvx copier update -a .copier-answers.base.yml` (3-way merge; your
+`AGENTS.local.md`, `README.md`, and other user-owned files are preserved).
+
+---
+
+Author: {{ author_name }} | {{ author_org }}
+License: Apache-2.0 (see `LICENSE`; attribution in `NOTICE`).

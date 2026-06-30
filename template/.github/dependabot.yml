@@ -1,0 +1,21 @@
+# Dependabot — base layer (GitHub Actions ecosystem only).
+# A language stack overlay adds its own package ecosystem (e.g. uv/pip) entry.
+# Conforms to repo-structure-standard, repo-hygiene, and governance-standards.
+version: 2
+updates:
+  # GitHub Actions workflows under .github/workflows/.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"

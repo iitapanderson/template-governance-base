@@ -1,0 +1,33 @@
+# Security Policy
+
+## Reporting a vulnerability
+
+Report security vulnerabilities privately by email to **{{ contact_email }}**. Do not open a public
+issue, pull request, or discussion for a suspected vulnerability — public disclosure before a fix is
+available puts downstream users at risk.
+
+Include enough detail to reproduce: affected component, version or commit, environment, and a
+minimal proof of concept. You will receive an acknowledgement of your report. Valid reports are
+triaged, and a remediation or mitigation is published before the issue is disclosed.
+
+## Supported versions
+
+Security fixes are applied only to the latest tagged release. Older tags are not patched; upgrade to
+the current release to receive fixes.
+
+| Version               | Supported |
+| --------------------- | --------- |
+| Latest tagged release | Yes       |
+| Older releases        | No        |
+
+## Scope
+
+Reports should concern this repository's own code, dependency pins, CI workflows, and quality-gate
+configuration (`.pre-commit-config.yaml` and the governance checks it runs). This repository follows
+the `repo-structure-standard`, `repo-hygiene`, and `governance-standards` policies referenced by its
+documentation; vulnerabilities introduced by downstream adaptations are the responsibility of the
+adopting project.
+
+---
+
+Maintainer: {{ author_name }} | {{ author_org }}

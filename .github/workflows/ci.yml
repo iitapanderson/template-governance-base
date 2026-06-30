@@ -1,0 +1,67 @@
+# Render-gate — this template repo's OWN CI (never rendered; lives at the repo root, so bare
+# `${{ }}` and matrix are fine). Renders the template to a temp dir with defaults and asserts the
+# output is clean: answers file present, no surviving Jinja, the furniture exists, the rendered
+# repo's own pre-commit gate is green, and a second render is idempotent (no diff).
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  render-gate:
+    name: render-gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+
+      - name: Render template (defaults)
+        run: |
+          rm -rf /tmp/tgb-render
+          uvx copier copy --defaults --trust --vcs-ref HEAD . /tmp/tgb-render
+
+      - name: Assert answers file present
+        run: test -f /tmp/tgb-render/.copier-answers.base.yml
+
+      - name: Assert no surviving .jinja files
+        run: |
+          stragglers="$(find /tmp/tgb-render -name '*.jinja')"
+          if [ -n "$stragglers" ]; then echo "Surviving .jinja:"; echo "$stragglers"; exit 1; fi
+
+      - name: Assert no unrendered Jinja delimiters
+        run: |
+          if grep -rE '(?<!\$)\{\{|\{%|\{#' /tmp/tgb-render; then
+            echo "Unrendered Jinja delimiters found"; exit 1
+          fi
+
+      - name: Assert furniture files exist
+        run: |
+          cd /tmp/tgb-render
+          for f in README.md LICENSE NOTICE CHANGELOG.md CODE_OF_CONDUCT.md \
+                   CONTRIBUTING.md SECURITY.md AGENTS.md CLAUDE.md .gitignore .editorconfig; do
+            test -f "$f" || { echo "missing furniture: $f"; exit 1; }
+          done
+
+      - name: Rendered repo pre-commit gate is green
+        run: |
+          cd /tmp/tgb-render
+          git init -q
+          git add -A
+          uvx pre-commit run --all-files
+
+      - name: Idempotent re-render yields no diff
+        run: |
+          cd /tmp/tgb-render
+          git add -A
+          uvx copier recopy --defaults --trust
+          git add -A
+          git diff --cached --quiet || { echo "recopy produced a diff:"; git diff --cached; exit 1; }

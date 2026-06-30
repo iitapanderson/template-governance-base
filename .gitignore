@@ -1,0 +1,8 @@
+# template-governance-base (the template repo itself — NOT the rendered payload).
+# Render outputs and tooling caches only; the payload's own .gitignore is under template/.
+.copier-render/
+/tmp-render/
+.DS_Store
+Thumbs.db
+*.local
+.scratch/

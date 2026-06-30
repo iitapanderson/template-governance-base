@@ -1,0 +1,26 @@
+# EditorConfig — root configuration.
+# Coding-style baseline that complements the pre-commit quality gate. See the
+# repo-structure-standard, repo-hygiene, and governance-standards documents for the
+# governing conventions.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Config and data files conventionally use 2-space indentation.
+[*.{yml,yaml,json,toml}]
+indent_size = 2
+
+# Markdown: a trailing double-space is a hard line break, so keep it intact.
+[*.md]
+trim_trailing_whitespace = false
+
+# Recipe runners require literal tabs for indentation.
+[{Makefile,justfile}]
+indent_style = tab

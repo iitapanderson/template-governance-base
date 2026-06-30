@@ -1,0 +1,18 @@
+# Universal noise (stack-agnostic base). A language stack overlay appends its own
+# build/tooling ignores (e.g. .venv/, __pycache__/) on top of this.
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.local
+
+# Local environment + secrets (never commit; commit a .env.example instead)
+.env
+.envrc
+
+# Scratch / local-only working space
+.scratch/
+
+# Local-only session handoffs (never shipped). The structure-lint skips git-ignored paths,
+# so frontmatter-less handoffs under here do not trip the docs gate.
+docs/sessions/

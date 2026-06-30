@@ -1,0 +1,68 @@
+# Contributing
+
+Thanks for your interest in `{{ project_name }}`. This document covers local setup, the quality
+gate, commit and pull-request conventions, and licensing.
+
+This repository follows the `repo-structure-standard`, `repo-hygiene`, and `governance-standards`
+conventions. Familiarity with those standards is assumed; contributions are reviewed against them.
+
+## Development setup
+
+```bash
+git clone <repo-url>
+cd {{ project_name }}
+uvx pre-commit install
+```
+
+`uvx pre-commit install` registers the local hooks so the quality gate runs on each commit. A
+language stack overlay (if this repo carries one) documents any additional toolchain setup in its
+own section of `AGENTS.md`.
+
+## Running the gate locally
+
+Run the gate before pushing:
+
+```bash
+uvx pre-commit run --all-files
+```
+
+This executes every hook in `.pre-commit-config.yaml` across the whole tree: universal hygiene plus
+the governance checks (Actions SHA-pinning, verbatim licence, root-Markdown allowlist, `docs/`
+frontmatter), and any language-specific lint/type/test hooks a stack overlay adds.
+
+## Commit style
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/). Use a type prefix and
+an imperative, present-tense summary:
+
+```
+feat: add the thing
+fix: handle the empty case
+docs: clarify gate invocation
+```
+
+Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`. Scope the change to the
+affected component where it helps reviewers.
+
+## Pull request process
+
+1. Branch from the default branch; do not push directly to it.
+2. Make your change and keep it focused on a single concern.
+3. Get the gate green locally (`uvx pre-commit run --all-files`).
+4. Open the pull request and fill out the PR template completely.
+5. CI must pass on the pull request before review and merge. Address review feedback with
+   follow-up commits.
+
+## Code of conduct
+
+Participation in this project is governed by [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). By
+contributing, you agree to uphold it.
+
+## Licensing
+
+This project is licensed under the Apache License 2.0; see [LICENSE](LICENSE) for the full text and
+[NOTICE](NOTICE) for attribution. By submitting a contribution, you agree that it is licensed under
+Apache-2.0 under the terms in Section 5 of the license (inbound = outbound), and that you have the
+right to submit it.
+
+Maintained by {{ author_name }} | {{ author_org }}.

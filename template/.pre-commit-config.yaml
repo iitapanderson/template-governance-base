@@ -1,0 +1,36 @@
+# Local commit gate (base layer). Mirror in CI (.github/workflows/ci.yml) — the hook is the fast
+# local dam, CI is the backstop the hook can't be --no-verify'd past. Activate once per clone:
+#   uvx pre-commit install
+# A language stack overlay appends its lint/type/test hooks below these. Hook repos are pinned to
+# readable version tags (NOT SHA) by deliberate decision — see docs/adr/0003.
+minimum_pre_commit_version: "3.5.0"
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks
+
+  # Universal governance checks (language-agnostic; pure stdlib, no third-party deps). Runs once
+  # over the whole tree, not per-file, so it can reason about layout (root-MD allowlist, docs
+  # frontmatter) and supply-chain (Actions SHA-pinning) holistically. `language: python` lets
+  # pre-commit provision the interpreter — no reliance on a bare `python` being on PATH.
+  - repo: local
+    hooks:
+      - id: governance-checks
+        name: universal governance checks (SHA-pin, license, MD-allowlist, frontmatter)
+        entry: python tools/governance_checks.py
+        language: python
+        pass_filenames: false
+        always_run: true

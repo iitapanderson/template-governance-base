@@ -1,0 +1,23 @@
+# {{ project_name }}
+
+{% if project_description %}{{ project_description }}{% else %}<!-- One-line description of this repository. -->{% endif %}
+
+## Quality gate
+
+```bash
+uvx pre-commit run --all-files
+```
+
+The gate runs the repository's `pre-commit` hooks: universal hygiene (whitespace, EOF, YAML/TOML
+validity, merge-conflict markers, large-file and secret scanning) plus the governance checks
+(Actions SHA-pinning, verbatim licence, root-Markdown allowlist, and `docs/` frontmatter). A
+language stack overlay adds its own lint, type-check, and test steps on top.
+
+## Governance
+
+This repository follows the `repo-structure-standard`, `repo-hygiene`, and `governance-standards`
+conventions; see `AGENTS.md` for the agent-facing contract.
+
+## License
+
+Apache-2.0. See `LICENSE` for the full text and `NOTICE` for attribution.
