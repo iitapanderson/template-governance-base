@@ -17,6 +17,7 @@ _skip_if_exists:
 # --- Questions -----------------------------------------------------------------------
 project_name:
   type: str
+  default: "example-service"
   help: "Repository name (kebab-case, e.g. my-service)."
 
 project_description:
