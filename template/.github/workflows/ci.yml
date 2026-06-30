@@ -1,7 +1,7 @@
 # Base CI — the backstop the local pre-commit hook can't be --no-verify'd past. Runs the same
 # universal governance + hygiene gate over the whole tree on every push to main and every PR.
-# A language stack overlay extends this (lint/type/test matrix) on top. Kept STATIC and single-job
-# (no matrix, no `${{ }}`) so the rendered file is verbatim and every Action stays SHA-pinned.
+# A language stack overlay extends this (lint/type/test matrix) on top. Kept STATIC (no matrix, no
+# `${{ }}`) so the rendered file is verbatim and every Action stays SHA-pinned.
 name: ci
 
 on:
@@ -22,3 +22,22 @@ jobs:
           persist-credentials: false
       - uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
       - run: uvx pre-commit run --all-files
+
+  # GitHub-Actions workflow linter (D-11). Catches the workflow-syntax/expression class GitHub's lexer
+  # rejects at startup — e.g. an empty `${{ }}` (even inside a run-block shell comment) that
+  # startup_failure'd this family's first public CI. fail_level:error makes a finding fail the job (the
+  # action defaults to none = annotate-only). Coverage boundary (verified): does NOT catch a bad
+  # run-step CLI flag (e.g. cyclonedx-py --outfile) — that is shell-runtime, outside actionlint.
+  actionlint:
+    name: actionlint (workflow lint)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: reviewdog/action-actionlint@be0761e4c1bab7cfdfca56cd03d4bb6253e39a4a # v1.72.0
+        with:
+          fail_level: error
