@@ -2,12 +2,13 @@
 """Universal governance checks — the stack-agnostic base gate (run via pre-commit).
 
 These are the *language-agnostic* governance rules every repo of this family enforces,
-implemented in pure stdlib so they run under any stack's toolchain (the cross-stack hook
-runner `pre-commit` provides the Python). A LANGUAGE stack overlay adds its own structure-lint
-(member/typing/service checks) in its native mechanism on top of this — those are NOT here.
+implemented in stdlib + PyYAML (workflows are PARSED, not line-matched — a regex over raw YAML
+is a leaky supply-chain gate). The cross-stack hook runner `pre-commit` provides the interpreter
+and the PyYAML dep. A LANGUAGE stack overlay adds its own structure-lint (member/typing/service
+checks) in its native mechanism on top of this — those are NOT here.
 
 Encodes the four universal (stack-agnostic) governance checks of this template family:
-  1. every `.github/workflows/` Action is SHA-pinned (supply-chain mandate; see docs/adr/0003),
+  1. every Action — in workflows AND local composite actions — is SHA-pinned (see docs/adr/0003),
   2. LICENSE is the verbatim full Apache-2.0 text (not swapped or truncated),
   3. root Markdown is limited to the OSS-furniture allowlist; everything else lives under docs/,
   4. every docs/ knowledge artefact carries enum-valid YAML frontmatter.
@@ -22,6 +23,9 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,10 +48,8 @@ FRONTMATTER_TYPES: frozenset[str] = frozenset({"SKILL", "WORKFLOW", "LESSON", "A
 FRONTMATTER_STATUS: frozenset[str] = frozenset({"EXPERIMENTAL", "VERIFIED", "DEPRECATED"})
 
 # A SHA-pinned Action ref ends in a 40-char hex commit; docker:// actions pin by image digest.
-# `uses:` is matched ANYWHERE on the line so a flow-style `[{ uses: x@tag }]` cannot evade it.
 _SHA_PIN = re.compile(r"@[0-9a-f]{40}$")
 _DIGEST_PIN = re.compile(r"@sha256:[0-9a-f]{64}$")
-_USES_REF = re.compile(r"\buses:\s*(?P<ref>[^\s#]+)")
 
 # Genuine noise skipped at any depth.
 _NOISE_DIRS = {".git", ".venv", "venv", "__pycache__", ".ruff_cache", ".pytest_cache", ".mypy_cache"}
@@ -75,10 +77,18 @@ def _drop_git_ignored(paths: list[Path]) -> list[Path]:
     return [p for p, rel in rels.items() if rel not in ignored]
 
 
+def _is_md(p: Path) -> bool:
+    # Case-insensitive: on a case-sensitive FS (Linux CI) `rglob('*.md')` misses `.MD`/`.Md`,
+    # which would let a stray uppercase-extension Markdown evade the allowlist invisibly.
+    return p.is_file() and p.suffix.lower() == ".md"
+
+
 def _iter_md() -> list[Path]:
-    """Every .md under the repo, skipping genuine noise dirs and git-ignored paths."""
+    """Every .md (any case) under the repo, skipping genuine noise dirs and git-ignored paths."""
     out: list[Path] = []
-    for p in REPO_ROOT.rglob("*.md"):
+    for p in REPO_ROOT.rglob("*"):
+        if not _is_md(p):
+            continue
         if any(part in _NOISE_DIRS for part in p.relative_to(REPO_ROOT).parts):
             continue
         out.append(p)
@@ -100,24 +110,56 @@ def _read_frontmatter(md: Path) -> dict[str, str] | None:
     return fm
 
 
+def _iter_uses_refs(node: Any) -> "list[str]":
+    """Every value under a ``uses`` key, anywhere in a parsed YAML structure. Parsing (not
+    line-regex) means ``uses :`` with odd spacing, flow style, job-level reusable-workflow refs,
+    and quoted forms are all caught — a raw-text regex misses every one of those."""
+    found: list[str] = []
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == "uses" and isinstance(v, str):
+                found.append(v)
+            else:
+                found.extend(_iter_uses_refs(v))
+    elif isinstance(node, list):
+        for item in node:
+            found.extend(_iter_uses_refs(item))
+    return found
+
+
 def check_actions_sha_pinned() -> list[str]:
-    """Every external `uses:` in .github/workflows/ pins a 40-hex SHA (or @sha256: digest)."""
-    wf_dir = REPO_ROOT / ".github" / "workflows"
-    if not wf_dir.is_dir():
-        return []  # no workflows yet — vacuously clean
+    """Every external ``uses:`` pins a 40-hex SHA (or ``@sha256:`` digest) — across BOTH workflows
+    and local composite actions. Composite ``action.yml`` files are scanned because a workflow
+    reaches them via a ``./``-local ref (which we skip), so an unpinned external action inside a
+    composite would otherwise be invisible. Files are YAML-parsed, not line-matched."""
+    gh = REPO_ROOT / ".github"
+    if not gh.is_dir():
+        return []  # no CI surface — vacuously clean
+    files: list[Path] = []
+    wf = gh / "workflows"
+    if wf.is_dir():
+        files += sorted(wf.glob("*.yml")) + sorted(wf.glob("*.yaml"))
+    actions = gh / "actions"
+    if actions.is_dir():
+        files += sorted(actions.rglob("action.yml")) + sorted(actions.rglob("action.yaml"))
     problems: list[str] = []
-    for wf in sorted(wf_dir.glob("*.yml")) + sorted(wf_dir.glob("*.yaml")):
-        for line in wf.read_text(encoding="utf-8").splitlines():
-            for m in _USES_REF.finditer(line):
-                ref = m.group("ref").strip("\"'")
-                if ref.startswith("./"):
-                    continue  # local composite action — no external ref to pin
-                if ref.startswith("docker://"):
-                    if not _DIGEST_PIN.search(ref):
-                        problems.append(f"{wf.name}: {ref} (docker:// needs @sha256:<digest>)")
-                    continue
-                if not _SHA_PIN.search(ref):
-                    problems.append(f"{wf.name}: {ref} (Action not SHA-pinned)")
+    for f in files:
+        rel = f.relative_to(REPO_ROOT).as_posix()
+        try:
+            data = yaml.safe_load(f.read_text(encoding="utf-8"))
+        except yaml.YAMLError as exc:  # fail-closed: an unparseable CI file is not "clean"
+            problems.append(f"{rel}: unparseable YAML ({exc.__class__.__name__}) - cannot verify pins")
+            continue
+        for ref in _iter_uses_refs(data):
+            r = ref.strip()
+            if r.startswith("./"):
+                continue  # local composite — its own action.yml is scanned above
+            if r.startswith("docker://"):
+                if not _DIGEST_PIN.search(r):
+                    problems.append(f"{rel}: {r} (docker:// needs @sha256:<digest>)")
+                continue
+            if not _SHA_PIN.search(r):
+                problems.append(f"{rel}: {r} (Action not SHA-pinned)")
     return problems
 
 
@@ -128,12 +170,25 @@ def check_license_verbatim_apache() -> list[str]:
         return ["LICENSE: missing"]
     text = lic.read_text(encoding="utf-8")
     problems: list[str] = []
-    # The end-marker is the anti-truncation guard: 'TERMS AND CONDITIONS' is an early heading,
-    # so a LICENSE cut off after it would still match — 'END OF TERMS AND CONDITIONS' sits after
-    # the full terms body, so its presence proves the body was not truncated.
-    for marker in ("Apache License", "Version 2.0", "TERMS AND CONDITIONS", "END OF TERMS AND CONDITIONS"):
-        if marker not in text:
-            problems.append(f"LICENSE: missing Apache-2.0 marker {marker!r} (not verbatim)")
+    # Substring markers alone are gameable — an 8-line file with just the headings passes. So this
+    # also asserts mid-body section anchors that ONLY exist in the real terms, plus a length floor:
+    # a gutted/swapped/relicensed LICENSE fails on the missing body anchors and/or the length.
+    anchors = (
+        "Apache License",
+        "Version 2.0",
+        "TERMS AND CONDITIONS",
+        "1. Definitions.",
+        "2. Grant of Copyright License.",
+        "3. Grant of Patent License.",
+        "7. Disclaimer of Warranty.",
+        "8. Limitation of Liability.",
+        "END OF TERMS AND CONDITIONS",
+    )
+    for anchor in anchors:
+        if anchor not in text:
+            problems.append(f"LICENSE: missing Apache-2.0 anchor {anchor!r} (not verbatim)")
+    if len(text) < 9000:  # verbatim Apache-2.0 is ~11.3 KB; a stub/truncation is far shorter
+        problems.append(f"LICENSE: {len(text)} chars (< 9000) - body truncated or gutted")
     return problems
 
 
@@ -158,10 +213,13 @@ def check_docs_frontmatter() -> list[str]:
     if not docs.is_dir():
         return []
     problems: list[str] = []
-    for md in _drop_git_ignored(list(docs.rglob("*.md"))):
-        if md.name.upper() == "README.MD":
+    for md in _drop_git_ignored([p for p in docs.rglob("*") if _is_md(p)]):
+        # Only the top-level docs/ index (docs/README.md) is exempt — a NESTED README.md (e.g.
+        # docs/internal/README.md) must still carry frontmatter, else it is an ungoverned hole.
+        relparts = md.relative_to(REPO_ROOT).parts
+        if len(relparts) == 2 and relparts[1].lower() == "readme.md":
             continue
-        rel = "/".join(md.relative_to(REPO_ROOT).parts)
+        rel = "/".join(relparts)
         fm = _read_frontmatter(md)
         if fm is None:
             problems.append(f"{rel}: no YAML frontmatter")

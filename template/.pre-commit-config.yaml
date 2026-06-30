@@ -32,5 +32,6 @@ repos:
         name: universal governance checks (SHA-pin, license, MD-allowlist, frontmatter)
         entry: python tools/governance_checks.py
         language: python
+        additional_dependencies: ["pyyaml==6.0.2"]  # workflows are PARSED, not regexed (leaky)
         pass_filenames: false
         always_run: true
