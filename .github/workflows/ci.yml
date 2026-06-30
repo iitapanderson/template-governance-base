@@ -39,7 +39,10 @@ jobs:
 
       - name: Assert no unrendered Jinja delimiters
         run: |
-          if grep -rE '(?<!\$)\{\{|\{%|\{#' /tmp/tgb-render; then
+          # -P (PCRE) so the (?<!\$) negative-lookbehind actually fires — it excludes GitHub
+          # Actions ${{ }} (legitimately static) while still catching real unrendered {{ }} / {% %}.
+          # ERE (-E) has no lookbehind, so it would false-pass once an overlay adds ${{ }} workflows.
+          if grep -rP '(?<!\$)\{\{|\{%|\{#' /tmp/tgb-render; then
             echo "Unrendered Jinja delimiters found"; exit 1
           fi
 
