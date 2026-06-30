@@ -10,7 +10,8 @@ checks) in its native mechanism on top of this — those are NOT here.
 Encodes the four universal (stack-agnostic) governance checks of this template family:
   1. every Action — in workflows AND local composite actions — is SHA-pinned (see docs/adr/0003),
   2. LICENSE is the verbatim full Apache-2.0 text (not swapped or truncated),
-  3. root Markdown is limited to the OSS-furniture allowlist; everything else lives under docs/,
+  3. root Markdown is limited to the OSS-furniture allowlist; everything else lives under docs/
+     (or a recognised tool-config dir: .github/, .claude/),
   4. every docs/ knowledge artefact carries enum-valid YAML frontmatter.
 
 Exit 0 if clean, 1 (with an enumerated report) on any violation. Fail-closed: a check that
@@ -193,8 +194,9 @@ def check_license_verbatim_apache() -> list[str]:
 
 
 def check_root_md_allowlist() -> list[str]:
-    """Root .md limited to the furniture allowlist; all other .md under docs/, .github/, or a
-    nested ``README.md``. A README is universal furniture (a per-member/sub-package long-
+    """Root .md limited to the furniture allowlist; all other .md under docs/, recognised
+    tool-config dirs (.github/, .claude/), or a nested ``README.md``. A README is universal
+    furniture (a per-member/sub-package long-
     description, rendered per-directory on GitHub) — not the MD-bloat this rule targets — so it
     is permitted at any depth. A language stack's own structure-lint may enforce a stricter rule
     (e.g. member-root READMEs only); this stack-agnostic base only blocks non-README stray .md."""
@@ -204,11 +206,11 @@ def check_root_md_allowlist() -> list[str]:
         if len(parts) == 1:
             if parts[0] not in ROOT_MD_ALLOWLIST:
                 problems.append(f"{parts[0]}: Markdown not in the root allowlist (move under docs/)")
-        elif parts[0] in {"docs", ".github"} or md.name == "README.md":
+        elif parts[0] in {"docs", ".github", ".claude"} or md.name == "README.md":
             continue
         else:
             problems.append(
-                f"{'/'.join(parts)}: Markdown outside root-allowlist / docs / .github / README.md"
+                f"{'/'.join(parts)}: Markdown outside root-allowlist / docs / .github / .claude / README.md"
             )
     return problems
 
