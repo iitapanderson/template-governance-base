@@ -49,5 +49,5 @@ contact_email:
 
 github_owner:
   type: str
-  default: "iitapanderson"
+  default: "Astenuprax"
   help: "GitHub owner/org that will host the rendered repository."

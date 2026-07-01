@@ -15,7 +15,7 @@ compose on top of it and add the language-specific structure-lint and tooling. A
 
 ```bash
 # Render a new repo from the base.
-uvx copier copy gh:iitapanderson/template-governance-base my-new-repo
+uvx copier copy gh:Astenuprax/template-governance-base my-new-repo
 
 # Later, pull governance updates into an existing consumer.
 cd my-new-repo
