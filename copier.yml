@@ -12,6 +12,10 @@ _skip_if_exists:
   - README.md
   - CHANGELOG.md
   - NOTICE
+  - "docs/registers/tracker.md"
+  - "docs/registers/done.md"
+  - "docs/planning/TRACKER.md"
+  - "docs/planning/DONE.md"
 
 # --- Questions -----------------------------------------------------------------------
 project_name:
@@ -50,3 +54,17 @@ github_owner:
   type: str
   default: "Astenuprax"
   help: "GitHub owner/org that will host the rendered repository."
+
+is_ai_monorepo:
+  type: bool
+  default: false
+  help: >-
+    Does this repo follow the AI-monorepo archetype (co-locates the Tier-0 tracker/done/
+    ROADMAP/DEBT quartet under one directory, per template-ai-monorepo)? If true, all four
+    planning artifacts render under docs/planning/ instead of splitting across
+    docs/registers/ (tracker/done/DEBT) and root (ROADMAP.md).
+
+planning_root:
+  type: str
+  when: false
+  default: "{{ 'docs/planning' if is_ai_monorepo else 'docs/registers' }}"

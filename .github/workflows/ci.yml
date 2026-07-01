@@ -14,8 +14,11 @@ permissions:
 
 jobs:
   render-gate:
-    name: render-gate
+    name: render-gate (is_ai_monorepo=${{ matrix.is_ai_monorepo }})
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        is_ai_monorepo: [false, true]
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -27,7 +30,10 @@ jobs:
       - name: Render template (defaults)
         run: |
           rm -rf /tmp/tgb-render
-          uvx copier copy --defaults --trust --vcs-ref HEAD . /tmp/tgb-render
+          uvx copier copy --defaults --trust --vcs-ref HEAD \
+            --data is_ai_monorepo=${{ matrix.is_ai_monorepo }} \
+            --data project_name=example-render-gate \
+            . /tmp/tgb-render
 
       - name: Assert answers file present
         run: test -f /tmp/tgb-render/.copier-answers.base.yml
@@ -54,6 +60,21 @@ jobs:
                    CONTRIBUTING.md SECURITY.md AGENTS.md CLAUDE.md .gitignore .editorconfig; do
             test -f "$f" || { echo "missing furniture: $f"; exit 1; }
           done
+
+      - name: Assert planning artifacts at the correct archetype path
+        run: |
+          cd /tmp/tgb-render
+          if [ "${{ matrix.is_ai_monorepo }}" = "true" ]; then
+            test -f docs/planning/TRACKER.md
+            test -f docs/planning/DONE.md
+            test ! -e docs/registers
+            test ! -e TRACKER.md   # regression check: planning_root must not render empty
+          else
+            test -f docs/registers/tracker.md
+            test -f docs/registers/done.md
+            test ! -e docs/planning
+            test ! -e tracker.md   # regression check: planning_root must not render empty
+          fi
 
       - name: Rendered repo pre-commit gate is green
         run: |

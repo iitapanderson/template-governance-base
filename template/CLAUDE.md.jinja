@@ -12,4 +12,19 @@ repo-specific pointers and does not duplicate them.
   `repo-hygiene` (mechanical cleanliness and frontmatter), and `governance-standards` (coding and
   authoring rules).
 
+## Planning artifacts (reserved names — do not invent synonyms)
+
+This repo's Tier-0 planning surface follows `project-planning-artifacts`. Canonical names/paths,
+reserved even before the file exists:
+
+- **Tracker (open work):** `{{ planning_root }}/{{ 'TRACKER' if is_ai_monorepo else 'tracker' }}.md` — eager, rendered.
+- **Done (completed-work log):** `{{ planning_root }}/{{ 'DONE' if is_ai_monorepo else 'done' }}.md` — eager, rendered.
+- **Decisions:** `docs/adr/` — eager, rendered (one file per decision; never a tracker/status log).
+- **ROADMAP (strategic arc):** `{{ 'docs/planning/ROADMAP.md' if is_ai_monorepo else 'ROADMAP.md' }}` — **lazy**:
+  create only when real roadmap content exists. Do not pre-create an empty file.
+- **DEBT register (deferred hardening):** `{{ planning_root }}/deferred-hardening.md` — **lazy**: create only
+  when a real deferred item exists.
+
+No synonyms for these roles (no `STATUS.md`, `PROGRESS.md`, `handoff.md`, …).
+
 Maintainer: {{ author_name }} | {{ author_org }}.
