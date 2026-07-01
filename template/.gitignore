@@ -6,6 +6,11 @@
 Thumbs.db
 *.local
 
+# Private per-clone agent notes — the update-safe home for project-specific guidance (AGENTS.md
+# itself re-renders on `copier update`). The `.md` suffix escapes `*.local`, so pin it explicitly.
+# Create it yourself when you have notes to keep; it is never committed and Copier never touches it.
+AGENTS.local.md
+
 # Local environment + secrets (never commit; commit a .env.example instead)
 .env
 .envrc

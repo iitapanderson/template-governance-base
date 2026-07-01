@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Canonical onboarding guide for `{{ project_name }}`. This file is the source of truth; `CLAUDE.md`
-is a thin pointer to it, and `AGENTS.local.md` holds project-specific notes. Read this before
-making changes.
+is a thin pointer to it. For project-specific notes that must survive `copier update`, create a
+git-ignored `AGENTS.local.md` at the root (see Governance updates). Read this before making changes.
 
 This repository was scaffolded from `template-governance-base` — the stack-agnostic governance
 kernel. A language stack overlay (e.g. a uv-workspace Python overlay) composes on top and documents
@@ -53,8 +53,10 @@ When a convention seems arbitrary, its rationale lives in one of those three doc
 ## Governance updates
 
 This repo is linked to `template-governance-base` via `.copier-answers.base.yml`. Pull later
-governance changes with `uvx copier update -a .copier-answers.base.yml` (3-way merge; your
-`AGENTS.local.md`, `README.md`, and other user-owned files are preserved).
+governance changes with `uvx copier update -a .copier-answers.base.yml` (3-way merge; write-once
+user-owned seeds like `README.md` are preserved). This guide (`AGENTS.md`) is template-owned and
+**re-renders on update** — do not keep project-specific notes here. Put them in a git-ignored
+`AGENTS.local.md` at the root, which Copier never creates or touches.
 
 ---
 

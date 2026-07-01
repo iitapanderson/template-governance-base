@@ -31,6 +31,8 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 # Root furniture Markdown allowed at the repo ROOT (everything else .md must live under docs/).
+# AGENTS.local.md is intentionally NOT here: it is git-ignored (private per-clone agent notes), so
+# _iter_md drops it before this check ever sees it — allow-listing it would be dead config.
 ROOT_MD_ALLOWLIST: frozenset[str] = frozenset(
     {
         "README.md",
@@ -39,7 +41,6 @@ ROOT_MD_ALLOWLIST: frozenset[str] = frozenset(
         "CONTRIBUTING.md",
         "SECURITY.md",
         "AGENTS.md",
-        "AGENTS.local.md",
         "CLAUDE.md",
     }
 )

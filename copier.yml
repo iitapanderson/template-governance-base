@@ -12,7 +12,6 @@ _skip_if_exists:
   - README.md
   - CHANGELOG.md
   - NOTICE
-  - AGENTS.local.md
 
 # --- Questions -----------------------------------------------------------------------
 project_name:
