@@ -1,11 +1,11 @@
 ---
-id: REF-DEFERRED-HARDENING-001
+id: REF-DEBT-001
 type: REFERENCE
 status: EXPERIMENTAL
 gist: Durable register of consciously-deferred hardening and known gaps for template-governance-base itself.
 ---
 
-# Deferred-Hardening Register
+# Debt Register
 
 The single durable home for **consciously-deferred** work and known gaps in `template-governance-base`
 itself (the project's own dev backlog, not the artifacts it renders into consumer repos).

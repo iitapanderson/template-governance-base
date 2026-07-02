@@ -22,7 +22,7 @@ reserved even before the file exists:
 - **Decisions:** `docs/adr/` — eager, rendered (one file per decision; never a tracker/status log).
 - **ROADMAP (strategic arc):** `{{ 'docs/planning/ROADMAP.md' if is_ai_monorepo else 'ROADMAP.md' }}` — **lazy**:
   create only when real roadmap content exists. Do not pre-create an empty file.
-- **DEBT register (deferred hardening):** `{{ planning_root }}/deferred-hardening.md` — **lazy**: create only
+- **DEBT register:** `{{ planning_root }}/{{ 'DEBT' if is_ai_monorepo else 'debt' }}.md` — **lazy**: create only
   when a real deferred item exists.
 
 No synonyms for these roles (no `STATUS.md`, `PROGRESS.md`, `handoff.md`, …).
